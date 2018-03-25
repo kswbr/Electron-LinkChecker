@@ -57,6 +57,9 @@ module.exports = config => {
     webpack: webpackConfig,
     webpackMiddleware: {
       noInfo: true
-    }
+    },
+    processKillTimeout: 8000,
+    browserDisconnectTimeout: 8000,
+
   })
 }
