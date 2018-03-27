@@ -32,7 +32,10 @@ module.exports = config => {
   config.set({
     browsers: ['visibleElectron'],
     client: {
-      useIframe: false
+      useIframe: false,
+      mocha: {
+          timeout : 20000
+      }
     },
     coverageReporter: {
       dir: './coverage',
@@ -58,8 +61,8 @@ module.exports = config => {
     webpackMiddleware: {
       noInfo: true
     },
-    processKillTimeout: 8000,
-    browserDisconnectTimeout: 8000,
-
+    processKillTimeout: 20000,
+    browserDisconnectTimeout: 20000,
+    browserNoActivityTimeout: 20000
   })
 }

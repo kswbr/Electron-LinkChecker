@@ -21,13 +21,22 @@ describe('getUrlInValid', () => {
     expect(result.code).to.equal('NOT_SET')
   })
 
-  it('CONTAINS_CMS_HOSTNAME', () => {
-    const result = getUrlInValid('https://obayashidev.powercms.hosting/works')
-    expect(result.code).to.equal('CONTAINS_CMS_HOSTNAME')
+  it('CONTAINS_IGNORE_HOSTNAME', () => {
+    const result = getUrlInValid('https://obayashidev.powercms.hosting/works', ['obayashidev.powercms.hosting'])
+    expect(result.code).to.equal('CONTAINS_IGNORE_HOSTNAME')
+
+    const result2 = getUrlInValid('https://obayashidev.powercms.hosting/works', ['obayashiprd.powercms.hosting'])
+    expect(result2.code).to.equal('OK')
   })
   it('HASH_ONLY', () => {
     expect(getUrlInValid('#').code).to.equal('HASH_ONLY')
     expect(getUrlInValid('###').code).to.equal('HASH_ONLY')
+  })
+
+  it('CONTAINS_HTTP_PROTOCOL', () => {
+    expect(getUrlInValid('http://obayashidev.powercms.hosting/works', [], true).code).to.equal('CONTAINS_HTTP_PROTOCOL')
+    expect(getUrlInValid('https://obayashidev.powercms.hosting/works', [], true).code).to.equal('OK')
+    expect(getUrlInValid('//obayashidev.powercms.hosting/works', [], true).code).to.equal('OK')
   })
 
   it('OK', () => {

@@ -9,15 +9,14 @@ export function getLinkStatus (url) {
       if (err) {
         reject(err)
       }
-      console.log(data.statusCode)
       resolve(data.statusCode)
     })
   })
 }
 
-export function getUrlInValid (target) {
+export function getUrlInValid (target, ignoreHosts = [], strictHttps = false) {
   if (!target) {
-    return { result: 1, code: 'NOT_SET' }
+    return { code: 'NOT_SET' }
   }
 
   const uniqueArray = target.split('').filter(function (item, pos) {
@@ -25,15 +24,22 @@ export function getUrlInValid (target) {
   })
 
   if (uniqueArray[0] === '#' && uniqueArray.length === 1) {
-    return { result: 1, code: 'HASH_ONLY' }
+    return { code: 'HASH_ONLY' }
   }
 
   const hostname = url.parse(target).hostname
   if (hostname) {
-    if (hostname.match(/powercms/)) {
-      return { result: 2, code: 'CONTAINS_CMS_HOSTNAME' }
+    const index = ignoreHosts.indexOf(hostname)
+    if (index !== -1) {
+      return { code: 'CONTAINS_IGNORE_HOSTNAME', value: ignoreHosts[index] }
     }
   }
 
-  return { result: 0, code: 'OK' }
+  if (strictHttps) {
+    const protocol = url.parse(target).protocol
+    if (protocol === 'http:') {
+      return { code: 'CONTAINS_HTTP_PROTOCOL' }
+    }
+  }
+  return { code: 'OK' }
 }
