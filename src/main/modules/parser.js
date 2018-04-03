@@ -1,5 +1,6 @@
 import request from 'request'
 import cheerio from 'cheerio'
+import URL from 'url'
 
 const createPasedInfo = ($) => {
   return {
@@ -36,6 +37,28 @@ export default class Parser {
         this._parsedInfo = createPasedInfo($)
         resolve($)
       })
+    })
+  }
+
+  getFilteredHrefList (target) {
+    const {protocol, host, pathname} = URL.parse(target)
+    const origin = protocol + '//' + host + pathname
+    const notProtocolOrigin = '//' + host + pathname
+
+    return this._parsedInfo.hrefList.filter((path) => {
+      path = URL.parse(path).href
+      if (path.indexOf(origin) === 0) {
+        return true
+      } else if (path.indexOf(notProtocolOrigin) === 0) {
+        return true
+      } else if (path.indexOf('/') !== 0 && !URL.parse(path).host) {
+        return true
+      } else if (path.indexOf(pathname) === 0) {
+        return true
+      } else {
+        // console.log(path)
+        return false
+      }
     })
   }
 

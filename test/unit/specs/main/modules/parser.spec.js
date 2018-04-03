@@ -13,4 +13,13 @@ describe('Parser', () => {
       done()
     })
   })
+
+  it('getFilterdHrefList', (done) => {
+    const parser = new Parser()
+    parser.fetch('https://ja.wikipedia.org/wiki/%E3%83%86%E3%82%B9%E3%83%88').then(($) => {
+      const hrefList = parser.getFilteredHrefList('https://ja.wikipedia.org/wiki/')
+      console.log(hrefList)
+      done()
+    })
+  })
 })
