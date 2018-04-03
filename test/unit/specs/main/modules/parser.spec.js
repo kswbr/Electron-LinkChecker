@@ -8,17 +8,18 @@ describe('Parser', () => {
 
   it('fetch', (done) => {
     const parser = new Parser()
-    parser.fetch('https://ja.wikipedia.org/wiki/%E3%83%86%E3%82%B9%E3%83%88').then(($) => {
-      expect($('h1.firstHeading').text()).to.equal('テスト')
+    parser.fetch('http://127.0.0.1:8889').then(($) => {
+      expect($('h1').text()).to.equal('test')
       done()
     })
   })
 
   it('getFilterdHrefList', (done) => {
     const parser = new Parser()
-    parser.fetch('https://ja.wikipedia.org/wiki/%E3%83%86%E3%82%B9%E3%83%88').then(($) => {
-      const hrefList = parser.getFilteredHrefList('https://ja.wikipedia.org/wiki/')
+    parser.fetch('http://127.0.0.1:8889').then(($) => {
+      const hrefList = parser.getFilteredHrefList('http://127.0.0.1:8889/')
       console.log(hrefList)
+      expect(hrefList).to.deep.equal(['link.html', 'linkNotfound.html'])
       done()
     })
   })
