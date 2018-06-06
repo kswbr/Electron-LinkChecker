@@ -1,7 +1,7 @@
 'use strict'
 
 import { app, BrowserWindow, ipcMain } from 'electron'
-import Manager from './modules/manager'
+import { runChecks } from './modules/manager'
 
 /**
  * Set `__static` path to static files in production
@@ -15,8 +15,6 @@ let mainWindow
 const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
-
-const manager = new Manager()
 
 function createWindow () {
   /**
@@ -54,8 +52,10 @@ ipcMain.on('ping', (event, arg) => {
 })
 
 ipcMain.on('runChecks', (event, arg) => {
-  manager.runChecks(event, arg)
+  runChecks(event, arg)
 })
+
+process.on('unhandledRejection', console.dir)
 
 /**
  * Auto Updater

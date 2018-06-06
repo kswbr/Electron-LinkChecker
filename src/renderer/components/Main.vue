@@ -106,6 +106,7 @@ https://test.errordomain.exampple.jp
       checkStart () {
         console.log('submit!')
         if (this.form.valid) {
+          this.messages = []
           ipcRenderer.send('runChecks', this.form)
         }
       },
