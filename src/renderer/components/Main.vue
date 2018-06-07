@@ -10,6 +10,31 @@
       <el-col :span="22" :offset="1">
          <el-card>
             <el-tabs v-model="form.activeName" @tab-click="tabClick">
+              <el-tab-pane label="チェック結果" name="third">
+                <el-col :span="22" :offset="1">
+                  <el-form :inline="true" :model="form.checkFilter" id="checkFilter">
+                    <el-checkbox-group v-model="form.checkFilter.type">
+                      <el-checkbox label="success" name="type" ><el-tag type="success">OK</el-tag></el-checkbox>
+                      <el-checkbox label="warning" name="type" ><el-tag type="warning">警告</el-tag></el-checkbox>
+                      <el-checkbox label="danger" name="type" ><el-tag type="danger">エラー</el-tag></el-checkbox>
+                    </el-checkbox-group>
+                  </el-form>
+                  <el-card v-for="item in messages" class="check-card">
+                    <div slot="header" class="clearfix">
+                      <span>{{item.url}}</span>
+                    </div>
+                    <div class="text item">
+                        <el-alert
+                          :title="item.message"
+                          :type="item.type"
+                          :description="item.params"
+                          show-icon
+                          :closable="false">
+                        </el-alert>
+                    </div>
+                  </el-card>
+                </el-col>
+              </el-tab-pane>
               <el-tab-pane label="ベーシック認証" name="first">
                 <el-col :span="22" :offset="1">
                 <el-form :inline="false" :model="form.auth" id="authForm">
@@ -37,31 +62,6 @@ https://test.errordomain.exampple.jp
                 </el-form>
                 </el-col>
               </el-tab-pane>
-              <el-tab-pane label="チェック結果" name="third">
-                <el-col :span="22" :offset="1">
-                  <el-form :inline="true" :model="form.checkFilter" id="checkFilter">
-                    <el-checkbox-group v-model="form.checkFilter.type">
-                      <el-checkbox label="success" name="type" ><el-tag type="success">OK</el-tag></el-checkbox>
-                      <el-checkbox label="warning" name="type" ><el-tag type="warning">警告</el-tag></el-checkbox>
-                      <el-checkbox label="danger" name="type" ><el-tag type="danger">エラー</el-tag></el-checkbox>
-                    </el-checkbox-group>
-                  </el-form>
-                  <el-card v-for="item in messages" class="check-card">
-                    <div slot="header" class="clearfix">
-                      <span>{{item.url}}</span>
-                    </div>
-                    <div class="text item">
-                        <el-alert
-                          :title="item.message"
-                          :type="item.type"
-                          :description="item.params"
-                          show-icon
-                          :closable="false">
-                        </el-alert>
-                    </div>
-                  </el-card>
-                </el-col>
-              </el-tab-pane>
             </el-tabs>
         </el-card>
       </el-col>
@@ -87,7 +87,7 @@ https://test.errordomain.exampple.jp
           checkFilter: {
             type: ['success', 'warning', 'danger']
           },
-          /* activeName: 'first', */
+          // activeName: 'first'
           activeName: 'third'
         },
         /* messages: [ {url: 'hoge.com', type: 'error', params: {hoge: 'fuga'}, message: 'test'}]  */
@@ -107,6 +107,7 @@ https://test.errordomain.exampple.jp
         console.log('submit!')
         if (this.form.valid) {
           this.messages = []
+          this.form.activeName = 'third'
           ipcRenderer.send('runChecks', this.form)
         }
       },
