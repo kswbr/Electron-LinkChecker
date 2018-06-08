@@ -2,6 +2,14 @@ import request from 'request'
 import cheerio from 'cheerio'
 import URL from 'url'
 
+const getDirname = (path) => {
+  let result = path.replace(/\\/g, '/').replace(/\/[^/]*$/, '')
+  if (result.match(/^[^/]*\.[^/.]*$/)) {
+    result = ''
+  }
+  return result
+}
+
 const createPasedInfo = ($) => {
   return {
     hrefList: $('a').map((i, el) => {
@@ -42,11 +50,18 @@ export default class Parser {
 
   getFilteredHrefList (target) {
     const {protocol, host, pathname} = URL.parse(target)
-    const origin = protocol + '//' + host + pathname
-    const notProtocolOrigin = '//' + host + pathname
+    const baseDirname = getDirname(pathname)
+    const origin = protocol + '//' + host + baseDirname
+    const notProtocolOrigin = '//' + host + baseDirname
 
     return this._parsedInfo.hrefList.filter((path) => {
       path = URL.parse(path).href
+      if (path === origin || path === notProtocolOrigin) {
+        return false
+      }
+      if (path === '') {
+        return false
+      }
       if (path.indexOf(origin) === 0) {
         return true
       } else if (path.indexOf(notProtocolOrigin) === 0) {
