@@ -56,7 +56,6 @@ ipcMain.on('runChecks', (event, arg) => {
 })
 
 process.on('unhandledRejection', console.dir)
-
 /**
  * Auto Updater
  *

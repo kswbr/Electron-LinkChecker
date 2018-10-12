@@ -3,13 +3,18 @@
 import request from 'request'
 import url from 'url'
 
-export function getLinkStatus (url) {
+export function getLinkStatus (inputUrl) {
   return new Promise((resolve, reject) => {
-    request.get({url}, (err, data) => {
+    if (inputUrl.indexOf('http') !== 0) {
+      resolve('NOT HTTP REQUEST')
+    }
+    request({url: inputUrl, method: 'GET'}, (err, data) => {
       if (err) {
-        console.log('REQUEST ERROR')
-        console.log(err)
-        reject(err)
+        console.error('REQUEST ERROR')
+        console.error(err)
+        console.error(data)
+        console.error(inputUrl)
+        resolve('REQUEST ERROR')
         return
       }
       resolve(data.statusCode)

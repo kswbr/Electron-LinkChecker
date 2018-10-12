@@ -39,7 +39,7 @@
                 <el-col :span="22" :offset="1">
                 <el-form :inline="false" :model="form.auth" id="authForm">
                   <el-form-item label="ID">
-                    <el-input v-model="form.auth.id"></el-input>
+                    <el-input v-model="form.auth.username"></el-input>
                   </el-form-item>
                   <el-form-item label="PASSWORD">
                     <el-input type="password" v-model="form.auth.password"></el-input>
@@ -57,7 +57,7 @@
                         placeholder="test.errordomain.exampple.jp
 https://test.errordomain.exampple.jp
 複数のドメインを記述する場合は改行してください"
-                        v-model="form.ignoreDomains"></el-input>
+                        v-model="form.ignoreHostsString"></el-input>
                   </el-form-item>
                 </el-form>
                 </el-col>
@@ -80,10 +80,11 @@ https://test.errordomain.exampple.jp
           url: '',
           valid: false,
           auth: {
-            id: '',
+            username: '',
             password: ''
           },
-          ignoreDomains: '',
+          ignoreHostsString: '',
+          ignoreHosts: '',
           checkFilter: {
             type: ['success', 'warning', 'danger']
           },
@@ -108,6 +109,7 @@ https://test.errordomain.exampple.jp
         if (this.form.valid) {
           this.messages = []
           this.form.activeName = 'third'
+          this.form.ignoreHosts = this.form.ignoreHostsString.split(/\r\n|\r|\n/)
           ipcRenderer.send('runChecks', this.form)
         }
       },

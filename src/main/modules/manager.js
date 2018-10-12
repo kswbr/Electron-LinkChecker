@@ -5,8 +5,11 @@ import Parser from './parser.js'
 import url from 'url'
 import async from 'async'
 
-let visitedList = []
 const URL = url.URL
+let visitedList = []
+let checkList = []
+let queOk = true
+let timer = null
 
 export function createURL (baseUrl, targetUrl) {
   if (targetUrl.indexOf('javascript') === 0) {
@@ -56,6 +59,9 @@ export function createURL (baseUrl, targetUrl) {
   // console.log(url.format({ protocol, auth, host, pathname, search, hash }))
   // console.log(targetUrl)
 
+  // console.log('createURL')
+  // console.log(baseUrl)
+  // console.log(url.parse(baseUrl))
   return new URL(url.format({ protocol, auth, host, pathname, search, hash })).href
 }
 
@@ -63,172 +69,125 @@ export function isHttps (target) {
   return url.parse(target).protocol === 'https:'
 }
 
-export function checkHrefList (event, params, urls) {
+export function checkTags (event, params, urls, tag) {
   return new Promise((resolve, reject) => {
     let hasError = false
-    async.each(urls, (url, callback) => {
-      const target = createURL(params.url, url)
-      console.log('target')
+    event.sender.send('message', {message: tag + 'タグのチェックを開始します', url: params.url, params: {result: 'CHECK START'}, type: 'success'})
+    async.eachLimit(urls, 1, (url, callback) => {
+      const target = createURL(params.requestUrl, url)
       console.log(target)
-      console.log(params.url)
-      console.log(url)
-      getLinkStatus(target).then((code) => {
+      setTimeout(() => getLinkStatus(target).then((code) => {
+        // console.log(target)
+
         if (code !== 200) {
-          event.sender.send('message', {message: 'ステータスエラー', url: params.url, params: {url: target, code}, type: 'error'})
+          event.sender.send('message', {message: tag + 'タグにステータスエラー', url: params.url, params: {url: createURL(params.url, url), code}, type: 'error'})
           hasError = true
         } else {
-          const checkResult = getUrlInValid(target, params.ignoreHosts, false)
+          const strictHttps = tag !== 'a' ? isHttps(params.url) : false
+          const checkResult = getUrlInValid(url, params.ignoreHosts, strictHttps)
           if (checkResult.code !== 'OK') {
-            event.sender.send('message', {message: checkResult.code, url: params.url, params: {url: target}, type: 'error'})
-            hasError = true
+            event.sender.send('message', {message: checkResult.code, url: params.url, params: {url: createURL(params.url, url)}, type: checkResult.type})
+            if (checkResult.type === 'error') {
+              hasError = true
+            }
           }
         }
-        setTimeout(() => {
-          callback()
-        }, 1000)
-      })
+        callback()
+      }), 500)
     }, (err) => {
       if (err) reject(err)
       if (!hasError) {
-        event.sender.send('message', {message: 'aタグにエラーはありませんでした', url: params.url, params: {result: 'OK'}, type: 'success'})
+        event.sender.send('message', {message: tag + 'タグにエラーはありませんでした', url: params.url, params: {result: 'OK'}, type: 'success'})
       }
       resolve(!hasError)
     })
   })
 }
 
-export function checkScriptList (event, params, urls) {
+export function check (event, params) {
+  const parser = new Parser()
   return new Promise((resolve, reject) => {
-    let hasError = false
-    async.each(urls, (url, callback) => {
-      const target = createURL(params.url, url)
-      getLinkStatus(target).then((code) => {
+    getLinkStatus(params.requestUrl)
+      .then((code) => new Promise((resolve, reject) => {
         if (code !== 200) {
-          event.sender.send('message', {message: 'ステータスエラー', url: params.url, params: {url: target, code}, type: 'error'})
-          hasError = true
-        } else {
-          const checkResult = getUrlInValid(target, params.ignoreHosts, isHttps(params.url))
-          if (checkResult.code !== 'OK') {
-            event.sender.send('message', {message: checkResult.code, url: params.url, params: {url: target}, type: 'error'})
-          }
+          event.sender.send('message', {message: 'ステータスエラー', url: params.url, params: {code}, type: 'error'})
+          return
         }
-        setTimeout(() => {
-          callback()
-        }, 1000)
-      })
-    }, (err) => {
-      if (err) reject(err)
-      if (!hasError) {
-        event.sender.send('message', {message: 'scriptタグにエラーはありませんでした', url: params.url, params: {result: 'OK'}, type: 'success'})
-      }
-      resolve(!hasError)
-    })
+        // console.log('URL OK')
+        resolve()
+      }))
+      .then(() => parser.fetch(params.requestUrl))
+      .then(() => checkTags(event, params, parser.parsedInfo.hrefList, 'a'))
+      .then(() => checkTags(event, params, parser.parsedInfo.scriptList, 'script'))
+      .then(() => checkTags(event, params, parser.parsedInfo.linkList, 'link'))
+      .then(() => checkTags(event, params, parser.parsedInfo.imgList, 'img'))
+      .then(() => resolve(parser))
   })
 }
-
-export function checkLinkList (event, params, urls) {
+export function runNextCheck (event, params, parser) {
   return new Promise((resolve, reject) => {
-    let hasError = false
-    async.each(urls, (url, callback) => {
-      const target = createURL(params.url, url)
-      getLinkStatus(target).then((code) => {
-        if (code !== 200) {
-          event.sender.send('message', {message: 'ステータスエラー', url: params.url, params: {url: target, code}, type: 'error'})
-          hasError = true
-        } else {
-          const checkResult = getUrlInValid(target, params.ignoreHosts, isHttps(params.url))
-          if (checkResult.code !== 'OK') {
-            event.sender.send('message', {message: checkResult.code, url: params.url, params: {url: target}, type: 'error'})
-          }
-        }
-        setTimeout(() => {
-          callback()
-        }, 1000)
-      })
+    const hrefList = parser.getFilteredHrefList(params.url).filter((list) => list.indexOf('#') !== 0)
+    async.eachLimit(hrefList, 1, (href, callback) => {
+      const target = createURL(params.url, href)
+      registerCheck(event, Object.assign({}, params, {url: target}))
+      setTimeout(() => {
+        callback()
+      }, 100)
     }, (err) => {
-      if (err) reject(err)
-      if (!hasError) {
-        event.sender.send('message', {message: 'linkタグにエラーはありませんでした', url: params.url, params: {result: 'OK'}, type: 'success'})
+      if (err) {
+        console.error(err)
       }
-      resolve(!hasError)
-    })
-  })
-}
-
-export function checkImgList (event, params, urls) {
-  return new Promise((resolve, reject) => {
-    let hasError = false
-    async.each(urls, (url, callback) => {
-      const target = createURL(params.url, url)
-      getLinkStatus(target).then((code) => {
-        if (code !== 200) {
-          event.sender.send('message', {message: 'ステータスエラー', url: params.url, params: {url: target, code}, type: 'error'})
-          hasError = true
-        } else {
-          const checkResult = getUrlInValid(target, params.ignoreHosts, isHttps(params.url))
-          if (checkResult.code !== 'OK') {
-            event.sender.send('message', {message: checkResult.code, url: params.url, params: {url: target}, type: 'error'})
-          }
-        }
-        setTimeout(() => {
-          callback()
-        }, 1000)
-      })
-    }, (err) => {
-      if (err) reject(err)
-      if (!hasError) {
-        event.sender.send('message', {message: 'imgタグにエラーはありませんでした', url: params.url, params: {result: 'OK'}, type: 'success'})
-      }
-      resolve(!hasError)
+      resolve()
     })
   })
 }
 
 export function runCheck (event, params) {
-  console.log(params)
-  const parser = new Parser()
+  return Promise.resolve(1)
+    .then(() => check(event, params))
+    .then((parser) => runNextCheck(event, params, parser))
+    .catch((err) => {
+      console.log('getLinkStatusError')
+      console.error(err)
+    })
+}
+
+export function keepChecksOfQue (event, params, interval) {
+  console.log('keepQue')
+  if (timer) return
+
+  timer = setInterval(() => {
+    if (!queOk) return
+    const que = checkList.shift()
+    if (que) {
+      queOk = false
+      console.log('executeQue')
+      runCheck(que.event, que.params).then(() => { queOk = true })
+    }
+  }, interval)
+}
+
+export function registerCheck (event, params) {
+  // console.log('registerCheck')
   if (visitedList.indexOf(params.url) > -1) {
     return false
   } else {
     visitedList.push(params.url)
   }
 
-  return Promise.resolve(1)
-    .then(() => getLinkStatus(params.url))
-    .then((code) => new Promise((resolve, reject) => {
-      if (code !== 200) {
-        event.sender.send('message', {message: 'ステータスエラー', url: params.url, params: {code}, type: 'error'})
-        return
-      }
-      // console.log('URL OK')
-      resolve()
-    }))
-    .then(() => parser.fetch(params.url))
-    .then(() => checkHrefList(event, params, parser.parsedInfo.hrefList))
-    .then(() => checkScriptList(event, params, parser.parsedInfo.scriptList))
-    .then(() => checkLinkList(event, params, parser.parsedInfo.linkList))
-    .then(() => checkImgList(event, params, parser.parsedInfo.imgList))
-    .then(() => new Promise((resolve, reject) => {
-      const hrefList = parser.getFilteredHrefList(params.url).filter((list) => list.indexOf('#') !== 0)
-      console.log(hrefList)
-      hrefList.forEach((href) => {
-        console.log('href')
-        console.log(href)
-        const target = createURL(params.url, href)
-        console.log('target')
-        console.log(target)
-        console.log('next params')
-        console.log(Object.assign({}, params, {url: target}))
+  if (params.auth.username && params.auth.password) {
+    let authUrl = new URL(params.url)
+    authUrl.username = params.auth.username
+    authUrl.password = params.auth.password
+    params.requestUrl = authUrl.href
+  } else {
+    params.requestUrl = params.url
+  }
 
-        setTimeout(() => {
-          runCheck(event, Object.assign({}, params, {url: target}))
-        }, 2000)
-      })
-    }))
-    .catch((err) => {
-      console.log('getLinkStatusError')
-      console.error(err)
-    })
+  console.log('registerCheck')
+  console.log(params)
+
+  checkList.push({event, params})
 }
 
 export function runChecks (event, params) {
@@ -238,7 +197,8 @@ export function runChecks (event, params) {
     return false
   }
   visitedList = []
-  runCheck(event, params).then(() => {
-    console.log('OK')
-  })
+  checkList = []
+  queOk = true
+  registerCheck(event, params)
+  keepChecksOfQue(event, params, 1000)
 }
