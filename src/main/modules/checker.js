@@ -24,7 +24,8 @@ export function getLinkStatus (inputUrl) {
 
 export function getUrlInValid (target, ignoreHosts = [], strictHttps = false) {
   if (!target) {
-    return {code: 'NOT_SET', type: 'warning'}
+    // return {code: 'NOT_SET', type: 'warning'}
+    return {code: 'OK'}
   }
 
   const uniqueArray = target.split('').filter(function (item, pos) {
@@ -32,7 +33,8 @@ export function getUrlInValid (target, ignoreHosts = [], strictHttps = false) {
   })
 
   if (uniqueArray[0] === '#' && uniqueArray.length === 1) {
-    return {code: 'HASH_ONLY', type: 'warning'}
+    // return {code: 'HASH_ONLY', type: 'warning'}
+    return {code: 'OK'}
   }
 
   const hostname = url.parse(target).hostname

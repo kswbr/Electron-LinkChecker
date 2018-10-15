@@ -15,7 +15,6 @@
                   <el-form :inline="true" :model="form.checkFilter" id="checkFilter">
                     <el-checkbox-group v-model="form.checkFilter.type">
                       <el-checkbox label="success" name="type" ><el-tag type="success">OK</el-tag></el-checkbox>
-                      <el-checkbox label="warning" name="type" ><el-tag type="warning">警告</el-tag></el-checkbox>
                       <el-checkbox label="danger" name="type" ><el-tag type="danger">エラー</el-tag></el-checkbox>
                     </el-checkbox-group>
                   </el-form>
@@ -86,7 +85,7 @@ https://test.errordomain.exampple.jp
           ignoreHostsString: '',
           ignoreHosts: '',
           checkFilter: {
-            type: ['success', 'warning', 'danger']
+            type: ['success', 'danger']
           },
           // activeName: 'first'
           activeName: 'third'
