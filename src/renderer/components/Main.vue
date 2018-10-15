@@ -19,7 +19,7 @@
                       <el-checkbox label="danger" name="type" ><el-tag type="danger">エラー</el-tag></el-checkbox>
                     </el-checkbox-group>
                   </el-form>
-                  <el-card v-for="item in messages" class="check-card">
+                  <el-card v-for="item in messages" v-show="filterType(item.type)" class="check-card">
                     <div slot="header" class="clearfix">
                       <span>{{item.url}}</span>
                     </div>
@@ -118,6 +118,9 @@ https://test.errordomain.exampple.jp
           require_host: true, require_protocol: true
         })
         this.form.url = value
+      },
+      filterType (value) {
+        return this.form.checkFilter.type.indexOf(value) >= 0
       }
     }
   }

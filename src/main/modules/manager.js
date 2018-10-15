@@ -93,7 +93,7 @@ export function checkTags (event, params, urls, tag) {
           }
         }
         callback()
-      }), 500)
+      }), 50)
     }, (err) => {
       if (err) reject(err)
       if (!hasError) {
