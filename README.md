@@ -1,6 +1,8 @@
-# linker
+# LinkChecker
 
 > An electron-vue project
+
+サイトを再帰的にチェックするリンクチェッカー
 
 #### Build Setup
 
